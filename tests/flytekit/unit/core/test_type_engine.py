@@ -145,7 +145,7 @@ def test_list_of_dataclass_getting_python_value():
     ctx = FlyteContext.current_context()
 
     schema = JSONSchema().dump(typing.cast(DataClassJsonMixin, Foo).schema())
-    foo_class = convert_json_schema_to_python_class(schema["definitions"], "FooSchema")
+    foo_class = convert_json_schema_to_python_class(schema["definitions"], {}, "FooSchema")
 
     pv = transformer.to_python_value(ctx, lv, expected_python_type=typing.List[foo_class])
     assert isinstance(pv, list)
@@ -279,7 +279,7 @@ def test_convert_json_schema_to_python_class():
         y: str
 
     schema = JSONSchema().dump(typing.cast(DataClassJsonMixin, Foo).schema())
-    foo_class = convert_json_schema_to_python_class(schema["definitions"], "FooSchema")
+    foo_class = convert_json_schema_to_python_class(schema["definitions"], {}, "FooSchema")
     foo = foo_class(x=1, y="hello")
     foo.x = 2
     assert foo.x == 2
@@ -453,10 +453,11 @@ def test_dataclass_transformer():
                 "type": "object",
             },
         },
+        "additionalSchema": {"s": {}},
     }
-
     tf = DataclassTransformer()
     t = tf.get_literal_type(TestStruct)
+    print(t.metadata["additionalSchema"])
     assert t is not None
     assert t.simple is not None
     assert t.simple == SimpleType.STRUCT
@@ -474,6 +475,7 @@ def test_dataclass_transformer():
     assert t is not None
     assert t.simple is not None
     assert t.simple == SimpleType.STRUCT
+    print(t.metadata)
     assert t.metadata is None
 
 
