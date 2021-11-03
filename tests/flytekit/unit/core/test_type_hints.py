@@ -17,7 +17,13 @@ from flytekit import ContainerTask, Secret, SQLTask, dynamic, kwtypes, map_task
 from flytekit.common.translator import get_serializable
 from flytekit.core import context_manager, launch_plan, promise
 from flytekit.core.condition import conditional
-from flytekit.core.context_manager import ExecutionState, FastSerializationSettings, Image, ImageConfig
+from flytekit.core.context_manager import (
+    ExecutionState,
+    FastSerializationSettings,
+    FlyteContextManager,
+    Image,
+    ImageConfig,
+)
 from flytekit.core.data_persistence import FileAccessProvider
 from flytekit.core.node import Node
 from flytekit.core.promise import NodeOutput, Promise, VoidPromise
@@ -363,6 +369,8 @@ def test_flytefile_in_dataclass():
 
     @task
     def t1(path: str) -> FileStruct:
+        with open(path, "w") as w:
+            w.write("Hello World\n")
         file = FlyteFile(path)
         fs = FileStruct(a=file, b=InnerFileStruct(a=file, b=file))
         return fs
@@ -376,7 +384,9 @@ def test_flytefile_in_dataclass():
         n1 = t1(path=path)
         return t2(fs=n1)
 
-    assert "/tmp/flyte/" in wf(path="/tmp/demo.txt")
+    ctx = FlyteContextManager.current_context()
+    path = ctx.file_access.get_random_local_path()
+    assert "/tmp/flyte/" in wf(path=path)
 
 
 def test_wf1_with_map():
