@@ -28,7 +28,7 @@ from flytekit.models.core.types import BlobType
 from flytekit.models.literals import Blob, BlobMetadata, Literal, LiteralCollection, LiteralMap, Primitive, Scalar
 from flytekit.models.types import LiteralType, SimpleType
 from flytekit.types.directory.types import FlyteDirectory
-from flytekit.types.file import JPEGImageFile
+from flytekit.types.file import JPEGImageFile, PNGImageFile
 from flytekit.types.file.file import FlyteFile, FlyteFilePathTransformer
 from flytekit.types.pickle import FlytePickle
 from flytekit.types.pickle.pickle import FlytePickleTransformer
@@ -507,7 +507,7 @@ def test_dataclass_int_preserving():
 @dataclass_json
 @dataclass
 class TestInnerFileStruct(object):
-    a: FlyteFile
+    a: PNGImageFile
     b: typing.List[FlyteFile]
     c: typing.Dict[str, FlyteFile]
 

@@ -33,17 +33,16 @@ from flytekit.models.literals import Literal, LiteralCollection, LiteralMap, Pri
 from flytekit.models.types import LiteralType, SimpleType
 
 
+# Every Flyte Types (FlyteFile, FlyteSchema) that are going to be used in dataclass should
+# implement function "to_json", so that we can serialize it by dataclass transformer
 def _default(self, obj):
     return getattr(obj.__class__, "to_json", _default.default)(obj)
 
 
-# Module that monkey-patches json module when it's imported so
-# JSONEncoder.default() automatically checks for a special "to_json()"
-# method and uses it to encode the object if found.
 _default.default = JSONEncoder().default
 JSONEncoder.default = _default
-
 base.MARSHMALLOW_TO_PY_TYPES_PAIRS.append((fields.Field, dict))
+
 T = typing.TypeVar("T")
 DEFINITIONS = "definitions"
 ADDITIONALSCHEMA = "additionalSchema"
@@ -271,7 +270,7 @@ class DataclassTransformer(TypeTransformer[object]):
         from flytekit.types.file import FlyteFile
 
         if t is FlyteFile:
-            return FlyteFile(**val)
+            return FlyteFile(val["remote_path"])
 
         if isinstance(val, list):
             # Handle nested List. e.g. [[1, 2], [3, 4]]
@@ -806,6 +805,7 @@ def update_additional_schema(t: Type[T], additional_schema: dict):
             and (
                 (f.type.__origin__ is list and ListTransformer.get_sub_type(f.type) is FlyteFile)
                 or (f.type.__origin__ is dict and DictTransformer.get_dict_types(f.type)[1] == FlyteFile)
+                or f.type.__origin__ == FlyteFile
             )
         ):
             additional_schema.update({f.name: FlyteFile.__name__})
@@ -813,7 +813,7 @@ def update_additional_schema(t: Type[T], additional_schema: dict):
             additional_schema[f.name] = {}
             update_additional_schema(f.type, additional_schema[f.name])
         else:
-            # Any non-primitive type in marshmallow has "fields.Field" in schema,
+            # Any non-primitive type in marshmallow is "fields.Field" in schema,
             # and we throw an error if the type is not FlyteFile
             if type(t.schema().fields[f.name]) is fields.Field:
                 raise TypeError(f"Unsupported type {f.type} in dataclass")

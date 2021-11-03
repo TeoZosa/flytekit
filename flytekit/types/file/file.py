@@ -4,7 +4,7 @@ import os
 import pathlib
 import typing
 
-from flytekit.core.context_manager import FlyteContext
+from flytekit.core.context_manager import FlyteContext, FlyteContextManager
 from flytekit.core.type_engine import TypeEngine, TypeTransformer
 from flytekit.loggers import logger
 from flytekit.models.core.types import BlobType
@@ -186,7 +186,10 @@ class FlyteFile(os.PathLike, typing.Generic[T]):
             return self._path == other
 
     def to_json(self):
-        return {"path": self._path, "remote_path": self._remote_path}
+        ctx = FlyteContextManager.current_context()
+        # Upload the file to the remote file systems
+        literal = FlyteFilePathTransformer().to_literal(ctx, self, FlyteFile, LiteralType)
+        return {"remote_path": literal.scalar.blob.uri}
 
     @property
     def downloaded(self) -> bool:

@@ -31,7 +31,7 @@ from flytekit.models.core import types as _core_types
 from flytekit.models.interface import Parameter
 from flytekit.models.task import Resources as _resource_models
 from flytekit.models.types import LiteralType, SimpleType
-from flytekit.types.file import FlyteFile
+from flytekit.types.file import FlyteFile, PNGImageFile
 from flytekit.types.schema import FlyteSchema, SchemaOpenMode
 
 serialization_settings = context_manager.SerializationSettings(
@@ -353,6 +353,7 @@ def test_flytefile_in_dataclass():
     @dataclass
     class InnerFileStruct(object):
         a: FlyteFile
+        b: PNGImageFile
 
     @dataclass_json
     @dataclass
@@ -363,7 +364,7 @@ def test_flytefile_in_dataclass():
     @task
     def t1(path: str) -> FileStruct:
         file = FlyteFile(path)
-        fs = FileStruct(a=file, b=InnerFileStruct(a=file))
+        fs = FileStruct(a=file, b=InnerFileStruct(a=file, b=file))
         return fs
 
     @task
@@ -375,7 +376,7 @@ def test_flytefile_in_dataclass():
         n1 = t1(path=path)
         return t2(fs=n1)
 
-    assert wf(path="/tmp/demo.txt") == "/tmp/demo.txt"
+    assert "/tmp/flyte/" in wf(path="/tmp/demo.txt")
 
 
 def test_wf1_with_map():
